@@ -189,17 +189,26 @@ function findNextWordStart(
     let pos = caretPos;
     // Seek until character type changes, unless already reached EOL/EOD
     // Seek until character type changes, unless already reached EOL/EOD
-    if (linesToken.length === 0) {
+    // 1ベースから0ベースへ変換し、ソート
+    const zeroBasedLinesToken = linesToken.map(t => t - 1).sort((a, b) => a - b);
+
+    if (zeroBasedLinesToken.length === 0) {
         pos = new Position(caretPos.line, caretPos.character + 1);
     } else {
         let target = 0;
         let i = 0;
-        while (caretPos.character >= target) {
+        // カーソル位置 *以上* の最初のトークン開始位置を探す
+        while (i < zeroBasedLinesToken.length && caretPos.character >= zeroBasedLinesToken[i]) {
             i++;
-            target = linesToken[i];
         }
-        target = linesToken[i + 1] - 1;
-        // console.log('Pos:' + target);
+        // 見つかったインデックス i が次の単語の開始位置
+        let targetIndex = i;
+        if (targetIndex < zeroBasedLinesToken.length) {
+            target = zeroBasedLinesToken[targetIndex];
+        } else {
+            // 行末の場合は最後の文字の位置
+            target = doc.lineAt(caretPos.line).range.end.character;
+        }
         pos = new Position(caretPos.line, target);
     }
 
@@ -250,16 +259,26 @@ function findNextWordEnd(
     }
 
     // Seek until character type changes, unless already reached EOL/EOD
-    if (linesToken.length === 0) {
+    // 1ベースから0ベースへ変換し、ソート
+    const zeroBasedLinesToken = linesToken.map(t => t - 1).sort((a, b) => a - b);
+
+    if (zeroBasedLinesToken.length === 0) {
         pos = new Position(caretPos.line, caretPos.character + 1);
     } else {
         let target = 0;
         let i = 0;
-        while (caretPos.character >= target) {
+        // カーソル位置 *以上* の最初のトークン開始位置を探す
+        while (i < zeroBasedLinesToken.length && caretPos.character >= zeroBasedLinesToken[i]) {
             i++;
-            target = linesToken[i];
         }
-        target = linesToken[i + 1] - 1;
+        // 見つかったインデックス i が次の単語の開始位置（＝現在の単語の終了位置）
+        let targetIndex = i;
+        if (targetIndex < zeroBasedLinesToken.length) {
+            target = zeroBasedLinesToken[targetIndex];
+        } else {
+            // 行末の場合は最後の文字の位置
+            target = doc.lineAt(caretPos.line).range.end.character;
+        }
         pos = new Position(caretPos.line, target);
     }
 
